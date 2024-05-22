@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface QueueRepository extends MongoRepository<Queue, UUID> {
     Queue findById(ObjectId id);
     List<Queue> findAllByDepartmentId(String departmentId);
+    int countByWindowId(String windowId);
 }

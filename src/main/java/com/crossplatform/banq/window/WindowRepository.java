@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface WindowRepository extends MongoRepository<Window, UUID> {
     Window findFirstByDepartmentsContaining(String departmentId);
+    List<Window> findAllByDepartmentsContaining(String departmentId);
 }

@@ -34,12 +34,11 @@ public class QueueController {
     }
 
     @DeleteMapping(path="/queues/{id}")
-    @ResponseBody
-    public String deleteQueue(@RequestParam String id, HttpServletRequest request, HttpServletResponse response) {
+    public @ResponseBody String deleteQueue(@PathVariable("id") String id, HttpServletRequest request, HttpServletResponse response) {
         String errorJson = authService.checkAccess(request, response);
 
         if (errorJson.isEmpty()) {
-            return queueService.delete(id, response);
+            return queueService.delete(id, request, response);
         }
 
         return errorJson;

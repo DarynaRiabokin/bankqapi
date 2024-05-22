@@ -2,9 +2,11 @@ package com.crossplatform.banq.queue;
 
 import com.crossplatform.banq.department.Department;
 import com.crossplatform.banq.department.DepartmentRepository;
+import com.crossplatform.banq.window.Window;
 import com.crossplatform.banq.window.WindowRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.bson.types.ObjectId;
 import org.json.JSONException;
@@ -22,27 +24,21 @@ public class QueueService {
     private final DepartmentRepository departmentRepository;
     private final WindowRepository windowRepository;
 
-    private String getBestWindow(String departmentId) {
-        List<Queue> queueByDepartment = queueRepository.findAllByDepartmentId(departmentId);
-
-        HashMap<String, Integer> windowIdCountMap = new HashMap<>();
-
-        for (Queue queue : queueByDepartment) {
-            String windowId = queue.getWindowId();
-
-            windowIdCountMap.put(windowId, windowIdCountMap.getOrDefault(windowId, 0) + 1);
+    public String getBestWindow(String departmentId) {
+        List<Window> windows = windowRepository.findAllByDepartmentsContaining(departmentId);
+        if (windows.isEmpty()) {
+            return "";
         }
 
-        int minCount = Integer.MAX_VALUE;
-        String windowIdWithMinCount = "";
-        for (Map.Entry<String, Integer> entry : windowIdCountMap.entrySet()) {
-            if (entry.getValue() < minCount) {
-                minCount = entry.getValue();
-                windowIdWithMinCount = entry.getKey();
+        Window bestWindow = windows.get(0);
+        for (Window window : windows) {
+            long windowQueueCount = queueRepository.countByWindowId(window.getId().toHexString());
+            long bestWindowQueueCount = queueRepository.countByWindowId(bestWindow.getId().toHexString());
+            if (windowQueueCount < bestWindowQueueCount) {
+                bestWindow = window;
             }
         }
-
-        return windowIdWithMinCount;
+        return bestWindow.getId().toHexString();
     }
 
     @Autowired
@@ -93,7 +89,7 @@ public class QueueService {
         return responseJSON.toString();
     }
 
-    public String delete(String id, HttpServletResponse response) throws JSONException {
+    public String delete(String id, HttpServletRequest request, HttpServletResponse response) throws JSONException {
         JSONObject responseJSON = new JSONObject();
         ObjectMapper mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
@@ -101,6 +97,12 @@ public class QueueService {
         ObjectId queueId = new ObjectId(id);
 
         Queue queue = queueRepository.findById(queueId);
+
+        response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+        response.setHeader("Access-Control-Allow-Credentials", "true");
+        response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE");
+        response.setHeader("Access-Control-Max-Age", "3600");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, remember-me");
 
         if (queue == null) {
             response.setStatus(404);

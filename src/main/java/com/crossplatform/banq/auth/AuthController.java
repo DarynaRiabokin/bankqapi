@@ -17,7 +17,7 @@ public class AuthController {
 
     @PostMapping("/login")
     @ResponseBody
-    public String login(@RequestBody Auth creds, HttpServletResponse response) {
-        return authService.login(creds.getLogin(), creds.getPassword(), response);
+    public String login(@RequestBody Auth creds, HttpServletRequest request, HttpServletResponse response) {
+        return authService.login(creds.getLogin(), creds.getPassword(), request, response);
     }
 }
